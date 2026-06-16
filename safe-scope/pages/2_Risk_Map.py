@@ -2,22 +2,17 @@ import streamlit as st
 from streamlit_folium import st_folium
 
 from src.risk_score import calculate_grid_risk
+from src.ui import render_disclaimer, render_sidebar, require_cleaned_data
 from src.visualizations import create_area_grid, create_heatmap, create_incident_map
 
 
 st.set_page_config(page_title="Risk Map | SafeScope", layout="wide")
+render_sidebar("Risk Map")
 st.title("Risk Map")
 st.caption("Geospatial view of historical incident density, severity, and time patterns.")
+render_disclaimer()
 
-if "cleaned_df" not in st.session_state:
-    st.warning("Please go to Data Explorer first to load and preprocess the dataset.")
-    st.stop()
-
-df = st.session_state["cleaned_df"]
-
-if df.empty:
-    st.info("The cleaned dataset is empty. Please load a valid CSV in Data Explorer.")
-    st.stop()
+df = require_cleaned_data()
 
 st.info(
     "Risk score is based on historical incident density, severity, and time patterns. "
@@ -49,6 +44,9 @@ if filtered.empty:
 
 grid_df = create_area_grid(filtered)
 risk_grid = calculate_grid_risk(grid_df)
+st.session_state["grid_summary"] = grid_df
+st.session_state["risk_grid"] = risk_grid
+st.session_state["risk_map_filtered_df"] = filtered
 
 metric_col1, metric_col2, metric_col3 = st.columns(3)
 metric_col1.metric("Filtered incidents", len(filtered))

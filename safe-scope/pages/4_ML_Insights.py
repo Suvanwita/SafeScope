@@ -6,20 +6,16 @@ from streamlit_folium import st_folium
 
 from src.anomaly_detection import anomaly_summary, detect_anomalies
 from src.clustering import run_dbscan_clustering
+from src.ui import render_disclaimer, render_sidebar, require_cleaned_data
 
 
 st.set_page_config(page_title="ML Insights | SafeScope", layout="wide")
+render_sidebar("ML Insights")
 st.title("ML Insights")
 st.caption("Explainable clustering and anomaly detection for historical incident patterns.")
+render_disclaimer()
 
-if "cleaned_df" not in st.session_state:
-    st.warning("Please go to Data Explorer first to load and preprocess the dataset.")
-    st.stop()
-
-df = st.session_state["cleaned_df"]
-if df.empty:
-    st.info("The cleaned dataset is empty. Please load a valid CSV in Data Explorer.")
-    st.stop()
+df = require_cleaned_data()
 
 crime_types = st.sidebar.multiselect(
     "Crime type",
@@ -50,12 +46,18 @@ if filtered.empty:
     st.info("No incidents match the current filters.")
     st.stop()
 
-clustered_df, cluster_summary = run_dbscan_clustering(filtered, eps=eps, min_samples=min_samples)
+with st.spinner("Running DBSCAN hotspot clustering..."):
+    clustered_df, cluster_summary = run_dbscan_clustering(filtered, eps=eps, min_samples=min_samples)
 cluster_rows = cluster_summary[cluster_summary["cluster_id"] != -1]
 noise_count = int((clustered_df["cluster_id"] == -1).sum()) if "cluster_id" in clustered_df.columns else 0
 
-anomaly_df = detect_anomalies(filtered, contamination=contamination)
+with st.spinner("Running Isolation Forest anomaly detection..."):
+    anomaly_df = detect_anomalies(filtered, contamination=contamination)
 unusual_df = anomaly_summary(anomaly_df)
+st.session_state["clustered_df"] = clustered_df
+st.session_state["cluster_summary"] = cluster_summary
+st.session_state["anomaly_df"] = anomaly_df
+st.session_state["ml_filtered_df"] = filtered
 
 
 def cluster_center_map(summary_df: pd.DataFrame) -> folium.Map:

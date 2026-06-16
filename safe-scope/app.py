@@ -4,20 +4,10 @@ from src.feature_engineering import summary_metrics
 from src.pipeline import get_session_or_sample_data
 from src.recommendations import page_notes
 from src.risk_score import calculate_area_risk
+from src.ui import render_disclaimer, render_sidebar
 
 
-st.set_page_config(
-    page_title="SafeScope",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
-
-
-DISCLAIMER = (
-    "SafeScope uses historical public incident data for awareness and planning only. "
-    "It does not predict real-time danger, guarantee safety, replace emergency services, "
-    "or make legal/policing decisions."
-)
+st.set_page_config(page_title="SafeScope", layout="wide", initial_sidebar_state="expanded")
 
 
 def render_metric_cards(metrics: dict) -> None:
@@ -39,12 +29,7 @@ def render_page_cards() -> None:
 
 
 def main() -> None:
-    with st.sidebar:
-        st.title("SafeScope")
-        st.caption("Women Safety Pattern Analyzer")
-        st.info("Start with the sample data or upload a Chicago crime style CSV from any page.")
-        st.markdown("**Pages**")
-        st.markdown("- Data Explorer\n- Risk Map\n- Time Analysis\n- ML Insights\n- Report")
+    render_sidebar("Home")
 
     df = get_session_or_sample_data()
     metrics = summary_metrics(df)
@@ -58,7 +43,7 @@ def main() -> None:
         "to support awareness and planning conversations."
     )
 
-    st.warning(DISCLAIMER)
+    render_disclaimer()
     render_metric_cards(metrics)
 
     left, right = st.columns([1.2, 0.8])

@@ -3,20 +3,26 @@ import plotly.express as px
 
 from src.feature_engineering import summary_metrics
 from src.pipeline import build_crime_pipeline, get_session_or_sample_data
+from src.ui import render_disclaimer, render_sidebar
 
 
 st.set_page_config(page_title="Data Explorer | SafeScope", layout="wide")
+render_sidebar("Data Explorer")
 st.title("Data Explorer")
 st.caption("Review, filter, and understand the incident dataset.")
+render_disclaimer()
 
 uploaded_file = st.sidebar.file_uploader("Upload CSV", type=["csv"])
 try:
     df = build_crime_pipeline(uploaded_file) if uploaded_file else get_session_or_sample_data()
-except ValueError as error:
-    st.error(str(error))
+except Exception as error:
+    st.error(f"Unable to load this dataset: {error}")
     st.stop()
 
 st.session_state["cleaned_df"] = df
+if df.empty:
+    st.info("No valid rows remain after preprocessing. Check date and coordinate columns in the uploaded CSV.")
+    st.stop()
 
 st.subheader("Dataset Overview")
 shape_col, start_col, end_col = st.columns(3)
