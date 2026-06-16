@@ -1,6 +1,47 @@
 import pandas as pd
 
 
+def normalize_series(series: pd.Series) -> pd.Series:
+    """Normalize a numeric series to a 0-1 range."""
+    numeric = pd.to_numeric(series, errors="coerce").fillna(0)
+    minimum = numeric.min()
+    maximum = numeric.max()
+    if maximum == minimum:
+        return pd.Series(0.5, index=series.index)
+    return (numeric - minimum) / (maximum - minimum)
+
+
+def calculate_grid_risk(grid_df: pd.DataFrame) -> pd.DataFrame:
+    """Calculate 0-100 historical risk scores for approximate grid cells."""
+    if grid_df.empty:
+        result = grid_df.copy()
+        result["risk_score"] = []
+        result["risk_label"] = []
+        return result
+
+    scored = grid_df.copy()
+    risk = (
+        0.40 * normalize_series(scored["incident_count"])
+        + 0.25 * normalize_series(scored["avg_severity"])
+        + 0.20 * normalize_series(scored["night_ratio"])
+    )
+
+    if "recent_activity" in scored.columns:
+        risk = risk + 0.15 * normalize_series(scored["recent_activity"])
+
+    scored["risk_score"] = (risk * 100).round(1)
+    scored["risk_label"] = pd.cut(
+        scored["risk_score"],
+        bins=[-1, 30, 60, 100],
+        labels=[
+            "Lower historical incident pattern",
+            "Moderate historical incident pattern",
+            "Higher historical incident pattern",
+        ],
+    ).astype(str)
+    return scored.sort_values("risk_score", ascending=False)
+
+
 def calculate_area_risk(df: pd.DataFrame) -> pd.DataFrame:
     """Score community areas from 0-100 using volume, severity, night, and domestic indicators."""
     if df.empty:
