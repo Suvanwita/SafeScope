@@ -2,9 +2,7 @@ import streamlit as st
 
 from src.anomaly_detection import anomaly_summary, detect_anomalies
 from src.clustering import cluster_incidents, cluster_summary
-from src.data_loader import get_data
-from src.feature_engineering import prepare_features
-from src.preprocessing import clean_data, normalize_columns, validate_columns
+from src.pipeline import build_crime_pipeline, get_session_or_sample_data
 from src.visualizations import anomaly_scatter, cluster_scatter
 
 
@@ -13,15 +11,11 @@ st.title("ML Insights")
 st.caption("Beginner-friendly clustering and anomaly detection for pattern exploration.")
 
 uploaded_file = st.sidebar.file_uploader("Upload CSV", type=["csv"])
-raw_df = get_data(uploaded_file)
-raw_df = normalize_columns(raw_df)
-is_valid, missing = validate_columns(raw_df)
-
-if not is_valid:
-    st.error(f"Missing required columns: {', '.join(missing)}")
+try:
+    df = build_crime_pipeline(uploaded_file) if uploaded_file else get_session_or_sample_data()
+except ValueError as error:
+    st.error(str(error))
     st.stop()
-
-df = prepare_features(clean_data(raw_df))
 
 n_clusters = st.sidebar.slider("Number of clusters", 2, 6, 4)
 contamination = st.sidebar.slider("Anomaly sensitivity", 0.02, 0.20, 0.08, 0.01)

@@ -1,8 +1,7 @@
 import streamlit as st
 
-from src.data_loader import get_data
-from src.feature_engineering import prepare_features, summary_metrics
-from src.preprocessing import clean_data, normalize_columns, validate_columns
+from src.feature_engineering import summary_metrics
+from src.pipeline import get_session_or_sample_data
 from src.recommendations import page_notes
 from src.risk_score import calculate_area_risk
 
@@ -47,13 +46,7 @@ def main() -> None:
         st.markdown("**Pages**")
         st.markdown("- Data Explorer\n- Risk Map\n- Time Analysis\n- ML Insights\n- Report")
 
-    raw_df = normalize_columns(get_data())
-    is_valid, missing = validate_columns(raw_df)
-    if not is_valid:
-        st.error(f"The bundled dataset is missing columns: {', '.join(missing)}")
-        st.stop()
-
-    df = prepare_features(clean_data(raw_df))
+    df = get_session_or_sample_data()
     metrics = summary_metrics(df)
     area_risk = calculate_area_risk(df)
 

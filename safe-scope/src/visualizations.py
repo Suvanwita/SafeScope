@@ -98,7 +98,7 @@ def create_incident_map(df: pd.DataFrame, area_risk: pd.DataFrame | None = None)
             f"<b>{row['primary_type']}</b><br>"
             f"{row['date']}<br>"
             f"{row['location_description']}<br>"
-            f"Community area: {int(row['community_area'])}<br>"
+            f"Community area: {int(row['community_area']) if pd.notna(row['community_area']) else 'N/A'}<br>"
             f"Risk score: {risk['risk_score']}"
         )
         folium.CircleMarker(

@@ -1,9 +1,8 @@
 import streamlit as st
 from streamlit_folium import st_folium
 
-from src.data_loader import get_data
-from src.feature_engineering import prepare_features
-from src.preprocessing import clean_data, filter_data, normalize_columns, validate_columns
+from src.pipeline import build_crime_pipeline, get_session_or_sample_data
+from src.preprocessing import filter_data
 from src.risk_score import calculate_area_risk
 from src.visualizations import create_incident_map, risk_score_chart
 
@@ -13,16 +12,13 @@ st.title("Risk Map")
 st.caption("Map historical incidents and community-area sample risk scores.")
 
 uploaded_file = st.sidebar.file_uploader("Upload CSV", type=["csv"])
-raw_df = get_data(uploaded_file)
-raw_df = normalize_columns(raw_df)
-is_valid, missing = validate_columns(raw_df)
-
-if not is_valid:
-    st.error(f"Missing required columns: {', '.join(missing)}")
+try:
+    df = build_crime_pipeline(uploaded_file) if uploaded_file else get_session_or_sample_data()
+except ValueError as error:
+    st.error(str(error))
     st.stop()
 
-df = prepare_features(clean_data(raw_df))
-crime_types = st.sidebar.multiselect("Crime types", sorted(df["primary_type"].unique()))
+crime_types = st.sidebar.multiselect("Crime types", sorted(df["crime_type"].unique()))
 hour_range = st.sidebar.slider("Hour range", 0, 23, (0, 23))
 filtered = filter_data(df, crime_types=crime_types, hour_range=hour_range)
 area_risk = calculate_area_risk(filtered)
