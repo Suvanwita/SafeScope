@@ -6,7 +6,8 @@ from streamlit_folium import st_folium
 
 from src.anomaly_detection import anomaly_summary, detect_anomalies
 from src.clustering import run_dbscan_clustering
-from src.ui import render_disclaimer, render_sidebar, require_cleaned_data
+from src.pipeline import build_crime_pipeline
+from src.ui import render_disclaimer, render_sidebar
 
 
 st.set_page_config(page_title="ML Insights | SafeScope", layout="wide")
@@ -15,7 +16,23 @@ st.title("ML Insights")
 st.caption("Explainable clustering and anomaly detection for historical incident patterns.")
 render_disclaimer()
 
-df = require_cleaned_data()
+uploaded_file = st.sidebar.file_uploader("Upload user CSV", type=["csv"])
+try:
+    if uploaded_file is not None:
+        df = build_crime_pipeline(uploaded_file)
+        st.success("Historical data loaded. ML models will train on this dataset.")
+    elif "cleaned_df" in st.session_state:
+        df = st.session_state["cleaned_df"]
+    else:
+        st.warning("Upload a historical CSV here or go to Data Explorer to load the sample/training data.")
+        st.stop()
+except Exception as error:
+    st.error(f"Unable to prepare this dataset for ML analysis: {error}")
+    st.stop()
+
+if df.empty:
+    st.info("No valid rows remain after preprocessing. Check date and coordinate columns in the uploaded CSV.")
+    st.stop()
 
 crime_types = st.sidebar.multiselect(
     "Crime type",
@@ -46,12 +63,12 @@ if filtered.empty:
     st.info("No incidents match the current filters.")
     st.stop()
 
-with st.spinner("Running DBSCAN hotspot clustering..."):
+with st.spinner("Training DBSCAN on the selected incident data..."):
     clustered_df, cluster_summary = run_dbscan_clustering(filtered, eps=eps, min_samples=min_samples)
 cluster_rows = cluster_summary[cluster_summary["cluster_id"] != -1]
 noise_count = int((clustered_df["cluster_id"] == -1).sum()) if "cluster_id" in clustered_df.columns else 0
 
-with st.spinner("Running Isolation Forest anomaly detection..."):
+with st.spinner("Training Isolation Forest on date-grid incident patterns..."):
     anomaly_df = detect_anomalies(filtered, contamination=contamination)
 unusual_df = anomaly_summary(anomaly_df)
 st.session_state["clustered_df"] = clustered_df

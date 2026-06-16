@@ -1,77 +1,49 @@
 import streamlit as st
 
-from src.feature_engineering import summary_metrics
-from src.pipeline import get_session_or_sample_data
-from src.recommendations import page_notes
-from src.risk_score import calculate_area_risk
 from src.ui import render_disclaimer, render_sidebar
 
 
 st.set_page_config(page_title="SafeScope", layout="wide", initial_sidebar_state="expanded")
 
 
-def render_metric_cards(metrics: dict) -> None:
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Sample incidents", metrics["total_incidents"])
-    col2.metric("Night-time share", f"{metrics['night_share']}%")
-    col3.metric("Domestic share", f"{metrics['domestic_share']}%")
-    col4.metric("Most common type", metrics["top_type"])
-
-
-def render_page_cards() -> None:
-    notes = page_notes()
-    rows = [st.columns(2), st.columns(2), st.columns(1)]
-    page_items = list(notes.items())
-    for index, (name, note) in enumerate(page_items):
-        row = rows[0] if index < 2 else rows[1] if index < 4 else rows[2]
-        with row[index % len(row)]:
-            st.container(border=True).markdown(f"**{name}**\n\n{note}")
-
-
 def main() -> None:
-    render_sidebar("Home")
-
-    df = get_session_or_sample_data()
-    metrics = summary_metrics(df)
-    area_risk = calculate_area_risk(df)
+    render_sidebar("App")
 
     st.title("SafeScope")
     st.subheader("Women Safety Pattern Analyzer")
-    st.write(
-        "SafeScope is a beginner-friendly Streamlit application for exploring historical incident patterns. "
-        "It combines data exploration, time analysis, maps, simple machine learning, and a printable-style report "
-        "to support awareness and planning conversations."
-    )
 
     render_disclaimer()
-    render_metric_cards(metrics)
 
-    left, right = st.columns([1.2, 0.8])
-    with left:
-        st.container(border=True).markdown(
-            "### What this project does\n"
-            "SafeScope cleans incident records, creates time and location features, scores community areas from "
-            "sample-level patterns, and highlights clusters or unusual records using transparent machine learning methods."
-        )
-        st.container(border=True).markdown(
-            "### How to navigate\n"
-            "Use the left sidebar page menu to move through the app. Each page reuses the same modular Python helpers "
-            "from `src/`, so it is easy to study or extend the code."
-        )
-    with right:
-        st.container(border=True).markdown(
-            f"### Highest sample risk area\n"
-            f"Community area **{int(area_risk.iloc[0]['community_area'])}** currently has the highest sample risk score "
-            f"at **{area_risk.iloc[0]['risk_score']}**."
-        )
-        st.container(border=True).markdown(
-            "### Data note\n"
-            "The bundled CSV is a compact educational sample inspired by public Chicago crime data fields. "
-            "Replace it with official open data for real analysis."
-        )
+    st.markdown(
+        "Think of this as a planning buddy before you step out. You can check what past public incident records "
+        "suggest around a place and time, then use that context to make more thoughtful choices about routes, "
+        "timing, check-ins, and transport."
+    )
+    st.markdown(
+        "It is not here to scare you or tell you what to do. It is here to give you a clearer picture, so you can "
+        "plan with a little more confidence and a little less guesswork."
+    )
 
-    st.markdown("## Page Guide")
-    render_page_cards()
+    st.markdown("## Quick Guide")
+    guide_col1, guide_col2 = st.columns(2)
+    with guide_col1:
+        st.container(border=True).markdown(
+            "**1. Load the records**\n\n"
+            "Open **Data Explorer** and use the sample records or upload a historical incident CSV."
+        )
+        st.container(border=True).markdown(
+            "**2. Look at the patterns**\n\n"
+            "Use **Risk Map**, **Time Analysis**, and **ML Insights** to see where and when incidents appear more often."
+        )
+    with guide_col2:
+        st.container(border=True).markdown(
+            "**3. Ask about your plan**\n\n"
+            "Open **Report**, enter a latitude, longitude, day, and hour, then generate recommendations."
+        )
+        st.container(border=True).markdown(
+            "**4. Use it alongside real-world care**\n\n"
+            "Check official updates, share trip details with someone you trust, and choose well-lit, active routes when possible."
+        )
 
 
 if __name__ == "__main__":

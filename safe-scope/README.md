@@ -1,14 +1,15 @@
 # SafeScope: Women Safety Pattern Analyzer
 
-SafeScope is a Streamlit multipage analytics app for exploring historical public incident data through maps, time patterns, explainable risk scoring, and machine learning summaries.
+SafeScope is a Streamlit multipage analytics app that trains on historical public incident records, then gives awareness recommendations for a user's location and time query.
 
 ## Problem Statement
 
-Women and community planners often need a simple way to understand historical incident patterns by place and time. Raw public datasets can be difficult to inspect quickly, especially during hackathons, civic planning discussions, or awareness workshops. SafeScope turns a CSV dataset into a clean, visual, explainable dashboard for awareness and planning conversations.
+Women and community planners often need a simple way to understand historical incident patterns around a specific place and time. Raw public datasets can be difficult to inspect quickly, especially during hackathons, civic planning discussions, or awareness workshops. SafeScope trains and scores patterns from historical records, then answers a user's location/time query with explainable recommendations.
 
 ## Features
 
-- CSV upload with sample Chicago-style incident data
+- CSV upload with sample Chicago-style historical incident data
+- User query form for latitude, longitude, day, and hour
 - Column normalization for common alternatives such as `date/time`, `crime_type`, `lat`, and `lng`
 - Data cleaning, coordinate validation, and time feature generation
 - Interactive Data Explorer with filters and Plotly charts
@@ -16,9 +17,10 @@ Women and community planners often need a simple way to understand historical in
 - Approximate grid-cell risk scoring
 - Time analysis by hour, weekday, and month
 - ML Insights page with DBSCAN and Isolation Forest
-- Rule-based recommendations
+- Rule-based recommendations for user location/time input
 - Downloadable CSV and text reports
 - Streamlit session-state workflow across pages
+- Historical-data upload in Data Explorer, ML Insights, and Report
 
 ## Tech Stack
 
@@ -40,7 +42,7 @@ DBSCAN finds dense geographic regions of historical incidents. SafeScope uses it
 
 ### Isolation Forest
 
-Isolation Forest flags unusual date-and-grid incident spikes compared with normal historical patterns in the uploaded dataset.
+Isolation Forest flags unusual date-and-grid incident spikes compared with normal historical patterns in the training dataset.
 
 ### Explainable Risk Scoring
 
@@ -86,6 +88,14 @@ cd safe-scope
 pip install -r requirements.txt
 streamlit run app.py
 ```
+
+## Demo Workflow
+
+1. Open the app with `streamlit run app.py`.
+2. Go to **Data Explorer** and load the sample historical data or upload a historical incident CSV.
+3. SafeScope preprocesses the historical records and creates analysis features.
+4. **ML Insights** trains DBSCAN on incident coordinates and Isolation Forest on date-grid incident patterns.
+5. **Report** asks the user for latitude, longitude, hour, and day, then generates recommendations from the nearest historical grid pattern.
 
 For an isolated local setup:
 

@@ -12,9 +12,24 @@ st.title("Data Explorer")
 st.caption("Review, filter, and understand the incident dataset.")
 render_disclaimer()
 
-uploaded_file = st.sidebar.file_uploader("Upload CSV", type=["csv"])
+st.info(
+    "This page loads the historical dataset used for model training and risk scoring. "
+    "User location/time questions are entered later on the Report page."
+)
+
+data_source_options = ["Sample data", "Upload CSV"]
+data_source = st.sidebar.radio("Data source", data_source_options)
+uploaded_file = st.sidebar.file_uploader("Upload CSV", type=["csv"]) if data_source == "Upload CSV" else None
 try:
-    df = build_crime_pipeline(uploaded_file) if uploaded_file else get_session_or_sample_data()
+    if data_source == "Upload CSV":
+        if uploaded_file is None:
+            st.info("Upload a historical CSV or choose Sample data.")
+            st.stop()
+        df = build_crime_pipeline(uploaded_file)
+        st.session_state["active_data_source"] = "Uploaded CSV"
+    else:
+        df = build_crime_pipeline()
+        st.session_state["active_data_source"] = "Sample data"
 except Exception as error:
     st.error(f"Unable to load this dataset: {error}")
     st.stop()
@@ -25,10 +40,11 @@ if df.empty:
     st.stop()
 
 st.subheader("Dataset Overview")
-shape_col, start_col, end_col = st.columns(3)
+shape_col, start_col, end_col, source_col = st.columns(4)
 shape_col.metric("Rows x columns", f"{df.shape[0]} x {df.shape[1]}")
-start_col.metric("Start date", df["date"].min().date())
-end_col.metric("End date", df["date"].max().date())
+start_col.metric("Start date", df["date"].min().strftime("%Y-%m-%d"))
+end_col.metric("End date", df["date"].max().strftime("%Y-%m-%d"))
+source_col.metric("Data source", st.session_state.get("active_data_source", "Session"))
 
 preview_tab, missing_tab, types_tab = st.tabs(["Preview", "Missing Values", "Top Crime Types"])
 with preview_tab:
